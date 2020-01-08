@@ -1,0 +1,33 @@
+
+fun FragmentActivity.hideKeyboard() {
+    val activity = this
+    (activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as? InputMethodManager)
+        ?.apply {
+            val view = activity.currentFocus ?: View(activity)
+            hideSoftInputFromWindow(view.windowToken, 0)
+        }
+}
+
+fun FragmentActivity.showKeyboard() {
+    val activity = this
+    (activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as? InputMethodManager)
+        ?.apply {
+            toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        }
+}
+
+fun FragmentActivity.disableKeyboard() {
+    window.setSoftInputMode(
+        WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+    )
+}
+
+fun FragmentActivity.enableKeyboard() {
+    window.setSoftInputMode(
+        WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
+    )
+}
+
+fun NavController.isCurrentDestination(label: String): Boolean {
+    return this.currentDestination?.label == label
+}
