@@ -1,0 +1,148 @@
+abstract class ScoupeFragment : Fragment(), CoroutineScope {
+
+    private lateinit var job: Job
+    override val coroutineContext: CoroutineContext
+        get() = job + Dispatchers.Main
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        job = Job()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
+
+    fun setToolbarTitle(title: String) {
+        toolbarTitle?.text = title
+    }
+
+    fun setToolbarIcon(@DrawableRes id: Int) {
+        toobar_image.setImageResource(id)
+    }
+
+    fun initBackButton() {
+        hamburgerBtn?.apply {
+            setImageDrawable(resources.getDrawable(R.drawable.ic_arrow_back, null))
+            setOnClickListener { onBackClick() }
+        }
+    }
+
+    open fun onBackClick() {
+        drawerListener?.onBackClick()
+    }
+
+
+    fun initOpenDrawerButton() {
+        hamburgerBtn?.apply {
+            setImageDrawable(resources.getDrawable(R.drawable.ic_menu, null))
+            setSafeOnClickListener { drawerListener?.openDrawer() }
+        }
+    }
+
+    open fun setNotificationsLabel(count: String) {
+        if (count.isEmpty()) {
+            search_btn.setImageResource(R.drawable.ic_notifications)
+            return
+        }
+
+        val icon = search_btn.drawable as LayerDrawable
+        val badge: CountIcon
+        // Reuse drawable if possible
+        val reuse = icon.findDrawableByLayerId(R.id.ic_group_count)
+        badge = if (reuse != null && reuse is CountIcon) {
+            reuse
+        } else {
+            CountIcon()
+        }
+
+        badge.setCount(count)
+        icon.mutate()
+        icon.setDrawableByLayerId(R.id.ic_group_count, badge)
+    }
+
+    private var drawerListener: OnFragmentInteractionListener? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnFragmentInteractionListener) {
+            drawerListener = context
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        drawerListener = null
+    }
+
+    fun hideKeyboard() {
+        val activity = activity ?: return
+        activity.hideKeyboard()
+    }
+
+    open fun setupBaseBackFragment(
+        title: String? = null,
+        @DrawableRes icon: Int? = null,
+        @DrawableRes pattern: Int? = null
+    ) {
+        val mainActivity = activity as? MainActivity ?: return
+        initBackButton()
+        title?.let { setToolbarTitle(title) }
+        icon?.let { setToolbarIcon(icon) }
+        mainActivity.hideBottomView()
+        mainActivity.lockDrawer(true)
+        pattern?.let { toobar_image.setImageResource(pattern) }
+    }
+
+    open fun setupBaseMainFragment(title: String? = null, @DrawableRes icon: Int? = null) {
+        val mainActivity = activity as? MainActivity ?: return
+        initOpenDrawerButton()
+        title?.let { setToolbarTitle(title) }
+        icon?.let { setToolbarIcon(icon) }
+        mainActivity.showBottomView()
+        mainActivity.lockDrawer(false)
+    }
+
+    @LayoutRes
+    open val fragmentLayoutId: Int? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val fragmentLayoutId =
+            fragmentLayoutId ?: return super.onCreateView(inflater, container, savedInstanceState)
+        return inflater.inflate(fragmentLayoutId, container, false)
+    }
+}
+
+
+
+
+
+
+class SafeClickListener(
+    private var defaultInterval: Int = 1000,
+    private val onSafeCLick: (View) -> Unit
+) : View.OnClickListener {
+
+    private var lastTimeClicked: Long = 0
+
+    override fun onClick(v: View) {
+        if (SystemClock.elapsedRealtime() - lastTimeClicked < defaultInterval) {
+            return
+        }
+        lastTimeClicked = SystemClock.elapsedRealtime()
+        onSafeCLick(v)
+    }
+}
+
+fun View.setSafeOnClickListener(onSafeClick: (View) -> Unit) {
+    val safeClickListener = SafeClickListener {
+        onSafeClick(it)
+    }
+    setOnClickListener(safeClickListener)
+}
