@@ -1,0 +1,112 @@
+fun EditText.afterTextChanged(afterTextChanged: (String) -> Unit) {
+    this.addTextChangedListener(object : TextWatcher {
+        override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun afterTextChanged(editable: Editable?) {
+            if (editable.toString().isNotEmpty()) {
+                afterTextChanged.invoke(editable.toString())
+            }
+
+        }
+    })
+}
+
+fun EditText.afterTextChangedDebounce(delayMillis: Long, input: (String) -> Unit) {
+    var lastInput = ""
+    var debounceJob: Job? = null
+    val uiScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    this.addTextChangedListener(object : TextWatcher {
+        override fun afterTextChanged(editable: Editable?) {
+            if (editable != null) {
+                val newtInput = editable.toString()
+                debounceJob?.cancel()
+                if (lastInput != newtInput) {
+                    lastInput = newtInput
+                    debounceJob = uiScope.launch {
+                        delay(delayMillis)
+                        if (lastInput == newtInput) {
+                            input(newtInput)
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun beforeTextChanged(cs: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(cs: CharSequence?, start: Int, before: Int, count: Int) {}
+    })
+}
+
+fun TextInputEditText.afterTextChangedDebounce(delayMillis: Long, input: (String) -> Unit) {
+    var lastInput = ""
+    var debounceJob: Job? = null
+    val uiScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    this.addTextChangedListener(object : TextWatcher {
+        override fun afterTextChanged(editable: Editable?) {
+            if (editable != null) {
+                val newtInput = editable.toString()
+                debounceJob?.cancel()
+                if (lastInput != newtInput) {
+                    lastInput = newtInput
+                    debounceJob = uiScope.launch {
+                        delay(delayMillis)
+                        if (lastInput == newtInput) {
+                            input(newtInput)
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun beforeTextChanged(cs: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(cs: CharSequence?, start: Int, before: Int, count: Int) {}
+    })
+}
+
+fun AutoCompleteTextView.afterTextChanged(afterTextChanged: (String) -> Unit) {
+    this.addTextChangedListener(object : TextWatcher {
+        override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun afterTextChanged(editable: Editable?) {
+            afterTextChanged.invoke(editable.toString())
+        }
+    })
+}
+
+
+val operatorsCode = arrayOf(
+        /* Kyivstar */  "067", "068", "096", "097", "098",
+        /* Vodafon */   "050", "066", "095", "099",
+        /* Life */      "063", "073", "093",
+        /* Other */     "089", "091", "092", "094", "039"
+)
+
+fun String.validationUAOperator(): Boolean {
+    var operator = this
+            .replace("+", "")
+            .replace("(", "")
+            .replace(")", "")
+            .replace(" ", "")//3806334490581
+            .substring(2, 5)
+    operatorsCode.forEach {
+        if (operator == it)
+            return true
+    }
+    return false
+}
+
+fun Float.formatCurrency(): String? {
+    val formatSymbols = DecimalFormatSymbols(Locale.getDefault())
+    formatSymbols.decimalSeparator = '.'
+    formatSymbols.groupingSeparator = ' '
+    val formatter = DecimalFormat("###,###,###.#", formatSymbols)
+    return formatter.format(this)
+}
