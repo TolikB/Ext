@@ -17,7 +17,7 @@
         builder.setCancelable(false)
         builder.setPositiveButton(android.R.string.yes) { dialog, which ->
             var intent =
-                Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", "0800301661", null))
+                Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", "0800898989", null))
             startActivity(intent)
         }
         builder.setNegativeButton(android.R.string.no) { dialog, which ->
