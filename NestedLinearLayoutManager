@@ -1,0 +1,96 @@
+
+import android.content.Context
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import android.view.View.MeasureSpec
+import android.view.View.MeasureSpec.EXACTLY
+import android.view.View.MeasureSpec.makeMeasureSpec
+import android.view.View.MeasureSpec.getMode
+import androidx.recyclerview.widget.LinearLayoutManager
+
+
+class NestedLinearLayoutManager(context: Context?) : LinearLayoutManager(context) {
+
+    private val mMeasuredDimension = IntArray(2)
+
+    override fun canScrollVertically(): Boolean {
+        return false
+    }
+
+    override fun onMeasure(recycler: RecyclerView.Recycler, state: RecyclerView.State,
+                           widthSpec: Int, heightSpec: Int) {
+        val widthMode = View.MeasureSpec.getMode(widthSpec)
+        val heightMode = View.MeasureSpec.getMode(heightSpec)
+
+        val widthSize = View.MeasureSpec.getSize(widthSpec)
+        val heightSize = View.MeasureSpec.getSize(heightSpec)
+
+        var width = 0
+        var height = 0
+        for (i in 0 until itemCount) {
+            if (orientation == LinearLayoutManager.HORIZONTAL) {
+                measureScrapChild(recycler, i,
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                        heightSpec,
+                        mMeasuredDimension)
+
+                width += mMeasuredDimension[0]
+                if (i == 0) {
+                    height = mMeasuredDimension[1]
+                }
+            } else {
+                measureScrapChild(recycler, i,
+                        widthSpec,
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                        mMeasuredDimension)
+
+                height += mMeasuredDimension[1]
+                if (i == 0) {
+                    width = mMeasuredDimension[0]
+                }
+            }
+        }
+
+        when (widthMode) {
+            View.MeasureSpec.EXACTLY -> width = widthSize
+        }
+
+        when (heightMode) {
+            View.MeasureSpec.EXACTLY -> height = heightSize
+        }
+
+        setMeasuredDimension(width, height)
+    }
+
+    private fun measureScrapChild(recycler: RecyclerView.Recycler, position: Int, widthSpec: Int,
+                                  heightSpec: Int, measuredDimension: IntArray) {
+        if (recycler.scrapList.size == 0) {
+        } else {
+
+            val view = recycler.getViewForPosition(position)
+            if (view.visibility === View.GONE) {
+                measuredDimension[0] = 0
+                measuredDimension[1] = 0
+                return
+            }
+            // For adding Item Decor Insets to view
+            super.measureChildWithMargins(view, 0, 0)
+            val p = view.layoutParams as RecyclerView.LayoutParams
+            val childWidthSpec = ViewGroup.getChildMeasureSpec(
+                    widthSpec,
+                    paddingLeft + paddingRight + getDecoratedLeft(view) + getDecoratedRight(view),
+                    p.width)
+            val childHeightSpec = ViewGroup.getChildMeasureSpec(
+                    heightSpec,
+                    paddingTop + paddingBottom + getDecoratedTop(view) + getDecoratedBottom(view),
+                    p.height)
+            view.measure(childWidthSpec, childHeightSpec)
+
+            // Get decorated measurements
+            measuredDimension[0] = getDecoratedMeasuredWidth(view) + p.leftMargin + p.rightMargin
+            measuredDimension[1] = getDecoratedMeasuredHeight(view) + p.bottomMargin + p.topMargin
+            recycler.recycleView(view)
+        }
+    }
+}
